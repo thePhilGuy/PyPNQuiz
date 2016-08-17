@@ -1,0 +1,38 @@
+program flow:
+- user is asked for player name
+    -- this may be compared to other player names?
+- main menu
+    - help (list these commands)
+    - list availables quizes (still waiting for players)
+    - join available quiz
+    - start a quiz (provide questions filename + number of players)
+    - exit
+- quiz flow
+    - waits until enough players have joined the Quiz
+    - sends random question to all players
+        - publish question prompt to topic
+        - start timer
+    - wait until all players have answered or timer runs out
+        - each player responds with an answer number 1 through n_answers
+            - player id + answer is published to topic
+    - host updates score
+    - repeat until out of questions
+    - display final score to all players
+    - return to main menu
+
+topics:
+- quiz requests
+    - hosts expecting more players are subscribed to this topic
+    - list requests are published to this topic
+        - publish quiz topic as response
+    - join requests are published to this topic
+        - decrement missing players in host (if 0 unsubscribe from quiz requests)
+- specific quiz
+    - host publishes question prompts to this topic
+    - host publishes question topic to this topic
+    - host unsubscribes from question topic after timeout
+    - host publishes score to this topic
+- specific question
+    - host subscribes to this topic on prompt publish
+    - all players publish to this topic as answers
+    -- host also unsubscribes if it receives answer from all players
