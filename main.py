@@ -1,4 +1,10 @@
 import sys
+import time
+from pubnub import Pubnub
+
+# Initialize pubnub context
+pubnub = Pubnub(publish_key="demo",
+                subscribe_key="demo")
 
 
 def display_help(tokens=None):
@@ -10,10 +16,29 @@ def display_help(tokens=None):
     print(help_text)
 
 
+def list_quizes(tokens=None):
+    def received(message, channel):
+        """prints each available topic as they arrive"""
+        print(message)
+
+    def connected(message):
+        print("Connected to availability topic")
+
+    # Maybe change channel to be unique for the requester
+    pubnub.subscribe(channels="pnquiz-available-list",
+                     callback=received,
+                     connect=connected)
+    pubnub.publish(channel="pnquiz-available", message="list")
+
+    # Give hosts time to respond
+    time.sleep(1)
+    pubnub.unsubscribe(channel="pnquiz-available")
+
+
 def handle_command(line):
     tokens = line.split(maxsplit=1)
-    {"help": display_help
-        # "list": list_quizes,
+    {"help": display_help,
+     "list": list_quizes,
         # "join": join_quiz,
         # "start": start_quiz
      }[tokens[0]](tokens)
@@ -33,4 +58,5 @@ if __name__ == "__main__":
     print("Welcome to PNQuiz\n"
           "Use the following commands to interact with the system:")
     display_help()
+
     run_menu()
