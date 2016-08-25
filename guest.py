@@ -1,20 +1,71 @@
+from pubnub import Pubnub
+import time
+
+
 class Guest:
-    def __init__(self, quiz_name):
-        pass
+
+    pub_key = "demo"
+    sub_key = "demo"
+
+    def __init__(self, username, quiz_name):
+        self.pn = Pubnub(publish_key=Guest.pub_key,
+                         subscribe_key=Guest.sub_key)
+
         # Publish join message to quiz channel
+        join_channel = "pnquiz-join-" + quiz_name
+        self.pn.publish(channel=join_channel, message=username)
 
         # Subscribe to quiz channel
+        def handle_message(message, channel):
+            self.__handle_message(message)
+        self.quiz_channel = "pnquiz-quiz-" + quiz_name
+        self.pn.subscribe(channels=self.quiz_channel, callback=handle_message)
 
         # Block until quiz is over
+        while not self.finished:
+            time.sleep(1)
 
-    def __handle_message(message, channel):
-        pass
-        # We get quiz start message at first
+    def invalid_message(self, _):
+        print("Received invalid message from Host.")
 
-        # We get question messages addressed to everyone and display
+    def connect(self, tokens):
+        msg_str = "Connected to quiz Host. "
+        if len(tokens) == 2:
+            wait_str = "Waiting for " + tokens[1] + " more players..."
+        else:
+            wait_str = "Waiting for more players..."
+        print(msg_str + wait_str)
 
-        # We get answer messages addressed to us and display
+    def start(self, tokens):
+        msg_str = "Starting quiz with "
+        for name in tokens[1:]:
+            msg_str += name + " "
+        print(msg_str)
 
-        # We get score message addressed to everyone and display
+    def stop(self, _):
+        self.pn.unsubscribe(channel=self.quiz_channel)
+        self.finished = True
 
-        # We get quiz over message addressed to everyone and back to main menu
+    def prompt(self, tokens):
+        question = tokens[1]
+        answers = [s for s in tokens[2:]]
+        print(question)
+        for i in range(len(answers)):
+            print(i+1, ") ", answers[i])
+        chosen = input("Answer #:")
+        answer_msg = self.username + " " + chosen
+        self.pn.publish(channel=self.quiz_channel, message=answer_msg)
+
+    def correct(self, tokens):
+        recipient = tokens[1]
+        msg = tokens[2]
+        if (recipient == self.username):
+            print(msg)
+
+    def __handle_message(self, message):
+        tokens = message.split(maxsplit=1)
+        {"connect": self.connect,
+         "start": self.start,
+         "stop": self.stop,
+         "prompt": self.prompt,
+         "correct": self.correct}.get(tokens[0], self.invalid_message)(tokens)

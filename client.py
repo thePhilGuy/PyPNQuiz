@@ -1,5 +1,8 @@
 from pubnub import Pubnub
+from host import Host
+from guest import Guest
 import sys
+import time
 
 
 class Client:
@@ -14,7 +17,7 @@ class Client:
               "Use the following commands to interact with the system:")
         self.display_help()
 
-    def display_help(self, tokens=None):
+    def display_help(self, _):
         help_text = ("help: display this message\n"
                      "list: list quizes waiting for players\n"
                      "join quiz_name: join quiz by given name\n"
@@ -22,37 +25,40 @@ class Client:
                      "quit: leave PNQuiz\n")
         print(help_text)
 
-    def list_quizes(self, tokens=None):
-        """
+    def list_quizes(self, _):
+
         def received(message, channel):
             print(message)
 
         def connected(message):
             print("Connected to availability topic")
 
-        # Maybe change channel to be unique for the requester
-        pubnub.subscribe(channels="pnquiz-available-list",
-                         callback=received,
-                         connect=connected)
-        pubnub.publish(channel="pnquiz-available", message="list")
+        channel_string = "pnquiz-available-list-" + self.username
+        self.pn.subscribe(channels=channel_string,
+                          callback=received,
+                          connect=connected)
+        self.pn.publish(channel="pnquiz-available", message=channel_string)
 
         # Give hosts time to respond
         time.sleep(1)
-        pubnub.unsubscribe(channel="pnquiz-available")
-        """
-        pass
+        self.pn.unsubscribe(channel=channel_string)
 
-    def start_quiz(self, tokens=None):
-        """
-        # print("tokens: ", tokens)
+    def start_quiz(self, tokens):
         if len(tokens) != 2:
             print("Usage: start quiz_name")
             return
-        current_quiz = host.Host(tokens[1])
+        # Start host and guest on separate threads
+        # Only host in first version
+        current_quiz = Host(tokens[1])
         current_quiz.start()
-        # # pass
-        """
-        pass
+
+    def join_quiz(self, tokens):
+        if len(tokens) != 2:
+            print("Usage: join quiz_name")
+            return
+        # start a guest thread
+        current_quiz = Guest(self.username, tokens[1])
+        current_quiz.participate
 
     def invalid_command(self, tokens):
         print("Unsupported command: ", tokens[0])
@@ -61,9 +67,8 @@ class Client:
         tokens = line.split(maxsplit=1)
         {"help": self.display_help,
          "list": self.list_quizes,
-            # "join": join_quiz,
-         "start": self.start_quiz
-         }.get(tokens[0], self.invalid_command)(tokens)
+         "join": self.join_quiz,
+         "start": self.start_quiz}.get(tokens[0], self.invalid_command)(tokens)
 
     def run_menu(self):
         while(True):

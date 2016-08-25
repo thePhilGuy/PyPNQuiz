@@ -30,21 +30,20 @@ class Host:
 
     def __listen_for_requests(self):
         """Listen for availability requests"""
-        def availability(message, channel):
-            print("Received request: ", message)
-            self.pn.publish(channel="pnquiz-available-list", message=self.name)
-
+        def availability(channel_string, channel):
+            print("Received request: ", channel_string)
+            self.pn.publish(channel=channel_string, message=self.name)
         self.pn.subscribe(channels="pnquiz-available", callback=availability)
 
         join_channel = "pnquiz-join-" + self.name
 
-        def join_request(message, channel):
-            print("Received username: ", message)
+        def join_request(username, channel):
+            print("Received username: ", username)
             # This could benefit from some synchronization
             self.expected -= 1
             if self.expected == 0:
+                print("All players have joined.")
                 self.pn.unsubscribe(channel=join_channel)
-
         self.pn.subscribe(channels=join_channel, callback=join_request)
 
     def __start_quiz():
