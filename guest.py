@@ -20,6 +20,7 @@ class Guest:
             self.__handle_message(message)
         self.quiz_channel = "pnquiz-quiz-" + quiz_name
         self.pn.subscribe(channels=self.quiz_channel, callback=handle_message)
+        self.finished = False
 
         # Block until quiz is over
         while not self.finished:
@@ -37,8 +38,9 @@ class Guest:
         print(msg_str + wait_str)
 
     def start(self, tokens):
+        tokens = tokens[1].split(" ")
         msg_str = "Starting quiz with "
-        for name in tokens[1:]:
+        for name in tokens:
             msg_str += name + " "
         print(msg_str)
 
@@ -47,8 +49,9 @@ class Guest:
         self.finished = True
 
     def prompt(self, tokens):
-        question = tokens[1]
-        answers = [s for s in tokens[2:]]
+        tokens = tokens[1].split("\n")
+        question = tokens[0]
+        answers = [s for s in tokens[1:]]
         print(question)
         for i in range(len(answers)):
             print(i+1, ") ", answers[i])
@@ -57,8 +60,8 @@ class Guest:
         self.pn.publish(channel=self.quiz_channel, message=answer_msg)
 
     def correct(self, tokens):
-        recipient = tokens[1]
-        msg = tokens[2]
+        tokens = tokens[1].split(" ")
+        recipient, msg = tokens[0], tokens[1]
         if (recipient == self.username):
             print(msg)
 

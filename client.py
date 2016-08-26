@@ -17,7 +17,7 @@ class Client:
               "Use the following commands to interact with the system:")
         self.display_help()
 
-    def display_help(self, _):
+    def display_help(self, _=None):
         help_text = ("help: display this message\n"
                      "list: list quizes waiting for players\n"
                      "join quiz_name: join quiz by given name\n"
@@ -25,7 +25,7 @@ class Client:
                      "quit: leave PNQuiz\n")
         print(help_text)
 
-    def list_quizes(self, _):
+    def list_quizes(self, _=None):
 
         def received(message, channel):
             print(message)
