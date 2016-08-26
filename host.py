@@ -15,13 +15,13 @@ class Host:
         self.quiz_channel = "pnquiz-quiz-" + quiz_name
 
         self.participants = {}
-        self.expected = 2
+        num_players = input("Please enter the expected number of players: ")
+        self.expected = int(num_players)
 
         self.pn = Pubnub(publish_key=Host.pub_key, subscribe_key=Host.sub_key)
         # Get and parse question file from user
-        # filename = input("Please enter question file path"
-        #                  "(see README): ")
-        filename = "questions.txt"
+        filename = input("Please enter question file path"
+                         "(see README): ")
         if os.path.isfile(filename):
             self.__parse_questions(filename)
 
@@ -55,17 +55,14 @@ class Host:
         self.questions = questions
 
     def start(self):
-        # Subscribe to availability request topic
+        """ Subscribe to availability request topic """
         self.__listen_for_requests()
-        counter = 0
-        while counter < 200 and not self.finished:
-            counter += 1
+        while not self.finished:
             time.sleep(1)
 
     def __listen_for_requests(self):
         """Listen for availability requests"""
         def availability(channel_string, channel):
-            print("Received request: ", channel_string)
             self.pn.publish(channel=channel_string, message=self.name)
         self.pn.subscribe(channels="pnquiz-available", callback=availability)
 
@@ -73,12 +70,10 @@ class Host:
 
         def join_request(username, channel):
             # This could benefit from some synchronization
-            print("Received username: ", username)
             self.expected -= 1
             self.participants.update({username: 0})
 
             if self.expected == 0:
-                print("All players have joined.")
                 self.pn.unsubscribe(channel=join_channel)
                 self.__start_quiz()
             else:
@@ -95,6 +90,20 @@ class Host:
         self.pn.publish(channel=self.quiz_channel, message=start_str)
         self.__send_question(0)
 
+    def __correct_answer(self, question_index, answer):
+        tokens = answer.split()
+        question = self.questions[question_index]
+        if question["correct"] == int(tokens[1]) - 1:
+            self.participants[tokens[0]] += 1
+            correction = "correct " + tokens[0] + "\n"
+            correction += "That is correct!"
+            self.pn.publish(channel=self.quiz_channel, message=correction)
+        else:
+            correction = "correct " + tokens[0] + "\n"
+            correction += "Incorrect! The correct answer is "
+            correction += str(question["correct"] + 1)
+            self.pn.publish(channel=self.quiz_channel, message=correction)
+
     def __send_question(self, i):
         if i > len(self.questions) - 1:
             self.__end_quiz()
@@ -110,9 +119,8 @@ class Host:
         def on_connect(message):
             self.pn.publish(channel=self.quiz_channel, message=prompt_str)
 
-        def on_receive(message, channel):
-            print("Received answer: ", message)
-            print("Expected #: ", question["expected"])
+        def on_receive(answer, channel):
+            self.__correct_answer(i, answer)
             question["expected"] -= 1
             # possible race condition here
             if question["expected"] < 1:
@@ -123,6 +131,9 @@ class Host:
         return question_channel
 
     def __end_quiz(self):
-        print("Ending quiz")
-        self.pn.publish(channel=self.quiz_channel, message="stop")
+        """ Ending quiz """
+        score = "Score:\n"
+        for player, points in self.participants.items():
+            score += player + " -> " + str(points) + " points\n"
+        self.pn.publish(channel=self.quiz_channel, message="stop " + score)
         self.finished = True

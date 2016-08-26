@@ -1,7 +1,6 @@
 from pubnub import Pubnub
 from host import Host
 from guest import Guest
-# import sys
 import time
 import os
 
@@ -27,17 +26,11 @@ class Client:
         print(help_text)
 
     def list_quizes(self, _=None):
-
         def received(message, channel):
             print(message)
 
-        def connected(message):
-            print("Connected to availability topic")
-
         channel_string = "pnquiz-available-list-" + self.username
-        self.pn.subscribe(channels=channel_string,
-                          callback=received,
-                          connect=connected)
+        self.pn.subscribe(channels=channel_string, callback=received)
         self.pn.publish(channel="pnquiz-available", message=channel_string)
 
         # Give hosts time to respond
@@ -49,7 +42,6 @@ class Client:
             print("Usage: start quiz_name")
             return
         # Start host and guest on separate threads
-        # Only host in first version
         current_quiz = Host(tokens[1])
         current_quiz.start()
 
@@ -76,6 +68,5 @@ class Client:
             line = input("> ")
             if line == "quit":
                 print("Goodbye.")
-                # sys.exit()
                 os._exit(0)
             self.handle_command(line)

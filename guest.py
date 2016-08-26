@@ -45,19 +45,19 @@ class Guest:
         tokens = tokens[1].split(" ")
         msg_str = "Starting quiz with "
         for name in tokens:
-            msg_str += name + " "
+            if name != self.username:
+                msg_str += name + " "
         print(msg_str)
 
-    def stop(self, _):
+    def stop(self, tokens):
         print("End of quiz")
+        print(tokens[1])
         self.pn.unsubscribe(channel=self.quiz_channel)
         self.finished = True
 
     def prompt(self, tokens):
         tokens = tokens[1].split("\n")
         question_channel = tokens[0]
-        # question_channel = "question_channel"
-        print("question channel: ", question_channel)
         question = tokens[1]
         answers = [s for s in tokens[2:]]
         print(question)
@@ -66,12 +66,14 @@ class Guest:
         chosen = input("Answer #:")
         answer_msg = self.username + " " + chosen
         self.pn.publish(channel=question_channel, message=answer_msg)
+        print()
 
     def correct(self, tokens):
-        tokens = tokens[1].split(" ")
+        tokens = tokens[1].split("\n")
         recipient, msg = tokens[0], tokens[1]
         if (recipient == self.username):
             print(msg)
+            print()
 
     def __handle_message(self, message):
         tokens = message.split(maxsplit=1)
