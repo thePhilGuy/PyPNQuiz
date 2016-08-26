@@ -3,6 +3,7 @@ from host import Host
 from guest import Guest
 import sys
 import time
+import os
 
 
 class Client:
@@ -58,7 +59,7 @@ class Client:
             return
         # start a guest thread
         current_quiz = Guest(self.username, tokens[1])
-        current_quiz.participate
+        current_quiz.participate()
 
     def invalid_command(self, tokens):
         print("Unsupported command: ", tokens[0])
@@ -75,5 +76,6 @@ class Client:
             line = input("> ")
             if line == "quit":
                 print("Goodbye.")
-                sys.exit()
+                # sys.exit()
+                os._exit(0)
             self.handle_command(line)

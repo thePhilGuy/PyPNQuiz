@@ -10,24 +10,28 @@ class Guest:
     def __init__(self, username, quiz_name):
         self.pn = Pubnub(publish_key=Guest.pub_key,
                          subscribe_key=Guest.sub_key)
+        self.username = username
+        self.finished = False
+        self.quiz_name = quiz_name
+        self.quiz_channel = "pnquiz-quiz-" + quiz_name
 
+    def participate(self):
         # Publish join message to quiz channel
-        join_channel = "pnquiz-join-" + quiz_name
-        self.pn.publish(channel=join_channel, message=username)
+        join_channel = "pnquiz-join-" + self.quiz_name
+        self.pn.publish(channel=join_channel, message=self.username)
 
         # Subscribe to quiz channel
         def handle_message(message, channel):
             self.__handle_message(message)
-        self.quiz_channel = "pnquiz-quiz-" + quiz_name
         self.pn.subscribe(channels=self.quiz_channel, callback=handle_message)
-        self.finished = False
 
         # Block until quiz is over
         while not self.finished:
             time.sleep(1)
 
-    def invalid_message(self, _):
-        print("Received invalid message from Host.")
+    def invalid_message(self, tokens):
+        print("Received invalid message from Host:")
+        print(tokens)
 
     def connect(self, tokens):
         msg_str = "Connected to quiz Host. "
@@ -50,14 +54,15 @@ class Guest:
 
     def prompt(self, tokens):
         tokens = tokens[1].split("\n")
-        question = tokens[0]
-        answers = [s for s in tokens[1:]]
+        question_channel = tokens[0]
+        question = tokens[1]
+        answers = [s for s in tokens[2:]]
         print(question)
         for i in range(len(answers)):
             print(i+1, ") ", answers[i])
         chosen = input("Answer #:")
         answer_msg = self.username + " " + chosen
-        self.pn.publish(channel=self.quiz_channel, message=answer_msg)
+        self.pn.publish(channel=question_channel, message=answer_msg)
 
     def correct(self, tokens):
         tokens = tokens[1].split(" ")

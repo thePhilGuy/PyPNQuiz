@@ -13,7 +13,7 @@ class Host:
         self.name = quiz_name
         self.quiz_channel = "pnquiz-quiz-" + quiz_name
 
-        self.participants = []
+        self.participants = {}
         self.expected = 2
 
         self.pn = Pubnub(publish_key=Host.pub_key, subscribe_key=Host.sub_key)
@@ -26,7 +26,7 @@ class Host:
         # Subscribe to availability request topic
         self.__listen_for_requests()
         counter = 0
-        while counter < 200 or not self.finished:
+        while counter < 200 and not self.finished:
             counter += 1
             time.sleep(1)
 
@@ -46,7 +46,7 @@ class Host:
             # This could benefit from some synchronization
             print("Received username: ", username)
             self.expected -= 1
-            self.participants.append(username)
+            self.participants.update({username: 0})
 
             if self.expected == 0:
                 print("All players have joined.")
@@ -70,11 +70,13 @@ class Host:
         fake_question += "Yes\n"
         fake_question += "No\n"
         fake_question += "What are you talking about?"
+        prompt_str += self.quiz_channel + "-q1 "
         prompt_str += fake_question
         self.pn.publish(channel=self.quiz_channel, message=prompt_str)
         # subscribe to question listening
 
         time.sleep(10)
+        print("Ending quiz")
         self.pn.publish(channel=self.quiz_channel, message="stop")
         self.finished = True
 
