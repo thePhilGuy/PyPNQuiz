@@ -27,7 +27,7 @@ class Guest:
 
         # Block until quiz is over
         while not self.finished:
-            time.sleep(1)
+            time.sleep(5)
 
     def invalid_message(self, tokens):
         print("Received invalid message from Host:")
@@ -49,12 +49,15 @@ class Guest:
         print(msg_str)
 
     def stop(self, _):
+        print("End of quiz")
         self.pn.unsubscribe(channel=self.quiz_channel)
         self.finished = True
 
     def prompt(self, tokens):
         tokens = tokens[1].split("\n")
         question_channel = tokens[0]
+        # question_channel = "question_channel"
+        print("question channel: ", question_channel)
         question = tokens[1]
         answers = [s for s in tokens[2:]]
         print(question)

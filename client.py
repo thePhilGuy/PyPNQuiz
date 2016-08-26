@@ -1,7 +1,7 @@
 from pubnub import Pubnub
 from host import Host
 from guest import Guest
-import sys
+# import sys
 import time
 import os
 
