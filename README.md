@@ -1,20 +1,21 @@
 # PyPNQuiz
-This application is a client for a multiplayer quiz game using the PubNub python sdk.
+This application is a client for a multiplayer online quiz game using the PubNub python sdk. It runs on linux. (Tested on arch linux and ubuntu).
 
 ## Setup
-The only dependency for this application is python 3.5, as the pubnub library has been included in the __venv__ subdirectory.
-Activate this virtual environment by running 
+The only dependency for this application are python 3.5, python-pip, an the latest pubnub python sdk.
+Here are the commands I ran on a fresh ubuntu virtual machine (python 3.5 came pre-installed)
 ```sh
-source bin/activate
+sudo apt install python3-pip
+pip3 install pubnub
 ```
 
 ## Usage
 ### Starting the application
-Assuming that the virtual environment provided with the source code has been activate, run the application with the command:
+Assuming that the dependencies have been installed correctly, run the application with the command:
 ```sh
 python pnquiz.py
 ```
-or 
+or (on most distributions that have python 2.7 as the default python):
 ```sh
 python3 pnquiz.py
 ```
