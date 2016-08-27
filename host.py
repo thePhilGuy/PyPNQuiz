@@ -8,22 +8,19 @@ class Host:
     pub_key = "demo"
     sub_key = "demo"
 
-    def __init__(self, quiz_name):
+    def __init__(self, quiz_name, num_players, question_file):
         self.finished = False
 
         self.name = quiz_name
         self.quiz_channel = "pnquiz-quiz-" + quiz_name
 
         self.participants = {}
-        num_players = input("Please enter the expected number of players: ")
-        self.expected = int(num_players)
+        self.expected = num_players
 
         self.pn = Pubnub(publish_key=Host.pub_key, subscribe_key=Host.sub_key)
         # Get and parse question file from user
-        filename = input("Please enter question file path"
-                         "(see README): ")
-        if os.path.isfile(filename):
-            self.__parse_questions(filename)
+        if os.path.isfile(question_file):
+            self.__parse_questions(question_file)
 
     def __parse_questions(self, filename):
         # Read question file into memory
@@ -75,6 +72,7 @@ class Host:
 
             if self.expected == 0:
                 self.pn.unsubscribe(channel=join_channel)
+                self.pn.unsubscribe(channel="pnquiz-available")
                 self.__start_quiz()
             else:
                 connect_str = "connect " + str(self.expected)

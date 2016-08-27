@@ -2,10 +2,30 @@ from pubnub import Pubnub
 from host import Host
 from guest import Guest
 import time
+import threading
 import os
 
 
+class Guest_thread(threading.Thread):
+    def __init__(self, username, quiz_name):
+        threading.Thread.__init__(self)
+        self.quiz = Guest(username, quiz_name)
+
+    def run(self):
+        self.quiz.participate()
+
+
+class Host_thread(threading.Thread):
+    def __init__(self, quiz_name, num_players, question_file):
+        threading.Thread.__init__(self)
+        self.quiz = Host(quiz_name, num_players, question_file)
+
+    def run(self):
+        self.quiz.start()
+
+
 class Client:
+
     pub_key = "demo"
     sub_key = "demo"
 
@@ -41,17 +61,28 @@ class Client:
         if len(tokens) != 2:
             print("Usage: start quiz_name")
             return
+
+        expected = input("Please enter the expected number of players: ")
+        filename = input("Please enter question file path"
+                         "(see README): ")
         # Start host and guest on separate threads
-        current_quiz = Host(tokens[1])
-        current_quiz.start()
+        host_thread = Host_thread(tokens[1], int(expected), filename)
+        guest_thread = Guest_thread(self.username, tokens[1])
+
+        host_thread.start()
+        guest_thread.start()
+        guest_thread.join()
+        host_thread.join()
 
     def join_quiz(self, tokens):
         if len(tokens) != 2:
             print("Usage: join quiz_name")
             return
-        # start a guest thread
-        current_quiz = Guest(self.username, tokens[1])
-        current_quiz.participate()
+        # current_quiz = Guest(self.username, tokens[1])
+        # current_quiz.participate()
+        guest_thread = Guest_thread(self.username, tokens[1])
+        guest_thread.start()
+        guest_thread.join()
 
     def invalid_command(self, tokens):
         print("Unsupported command: ", tokens[0])
